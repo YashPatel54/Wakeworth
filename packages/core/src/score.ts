@@ -8,7 +8,8 @@ import type { DayPlan, SleepLog, Task, Tier } from './types.js';
  *
  *   Score = 40·C + 25·A + 20·S + 15·F
  *
- * C  Critical completed   Critical minutes done ÷ planned (each task capped at its plan)
+ * C  Critical completed   Critical minutes done ÷ planned (each task capped at its plan;
+ *                         a Critical task marked done counts as complete)
  * A  Plan adherence       Important minutes done ÷ planned − 0.04 per 5 min of time debt
  * S  Sleep                0.75 × (slept ÷ target, capped) + 0.25 if bedtime was consistent
  * F  Focus quality        1 − 0.15 per mid-task switch after the first 3
@@ -28,6 +29,8 @@ export interface ScoreInput {
   tasks: Task[];
   plan: DayPlan;
   usage: Record<string, TaskUsage>;
+  /** Tasks marked done on this day. A Critical task marked done counts as complete. */
+  completedTaskIds?: string[];
   /** Time debt created on this day, in minutes. */
   debtMinutes: number;
   sleep: SleepLog | null;
@@ -48,21 +51,29 @@ export interface ScoreBreakdown {
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
-/** Weighted minutes done ÷ minutes planned for one tier; 1 if nothing was planned. */
+/**
+ * Weighted minutes done ÷ minutes planned for one tier; 1 if nothing was planned.
+ * Critical tasks marked done count as fully complete, whatever time they took.
+ */
 export function tierCompletion(
   tier: Tier,
   tasks: Task[],
   plan: DayPlan,
   usage: Record<string, TaskUsage>,
+  completedTaskIds: readonly string[] = [],
 ): number {
   let planned = 0;
   let done = 0;
   for (const task of tasks) {
     const p = plan[task.id] ?? 0;
     if (p <= 0 || effectiveTier(task) !== tier) continue;
+    planned += p;
+    if (tier === 'critical' && completedTaskIds.includes(task.id)) {
+      done += p;
+      continue;
+    }
     const u = usage[task.id];
     const weighted = u ? u.timer + MANUAL_WEIGHT * u.manual : 0;
-    planned += p;
     done += Math.min(p, weighted);
   }
   return planned > 0 ? done / planned : 1;
@@ -95,7 +106,13 @@ export function bandFor(score: number): Band {
 }
 
 export function dailyScore(input: ScoreInput): ScoreBreakdown {
-  const critical = tierCompletion('critical', input.tasks, input.plan, input.usage);
+  const critical = tierCompletion(
+    'critical',
+    input.tasks,
+    input.plan,
+    input.usage,
+    input.completedTaskIds,
+  );
   const adherence = adherencePart(
     tierCompletion('important', input.tasks, input.plan, input.usage),
     input.debtMinutes,

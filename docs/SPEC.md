@@ -31,7 +31,9 @@ This file records the rules the code implements, so the repo is self-contained.
 ## Time bank
 
 - Unused Important/Flexible time is banked when the task is marked done or the day closes.
-- Unused Critical time is never banked; it is reported as "Critical missed".
+- Unused Critical time is never banked. If the day ends without the task marked
+  done, it is reported as "Critical missed". A Critical task marked done early
+  counts as complete.
 - Overruns are paid from the bank, same tier first, then lower tiers:
 
   | Banked from | Pays Critical | Pays Important | Pays Flexible / Leisure |
@@ -50,7 +52,7 @@ This file records the rules the code implements, so the repo is self-contained.
 
 | Part | Measure (0–1) |
 | --- | --- |
-| C | Critical minutes done ÷ planned, each task capped at its plan |
+| C | Critical minutes done ÷ planned, each task capped at its plan; a Critical task marked done counts as complete |
 | A | Important minutes done ÷ planned, − 0.04 per 5 min of time debt |
 | S | 0.75 × (slept ÷ target, capped) + 0.25 if bedtime within ±45 min of usual |
 | F | 1 − 0.15 per mid-task switch after the first 3 |

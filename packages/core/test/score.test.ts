@@ -30,6 +30,20 @@ describe('dailyScore', () => {
     expect(r.score).toBe(80);
   });
 
+  it('counts a Critical task marked done early as complete', () => {
+    const usage = { study: { timer: 120, manual: 0 }, gym: { timer: 60, manual: 0 } };
+    expect(score({ usage }).critical).toBeCloseTo(2 / 3);
+    expect(score({ usage, completedTaskIds: ['study'] }).critical).toBe(1);
+  });
+
+  it('does not treat "done" as complete for Important tasks', () => {
+    const r = score({
+      usage: { study: { timer: 180, manual: 0 }, gym: { timer: 30, manual: 0 } },
+      completedTaskIds: ['gym'],
+    });
+    expect(r.adherence).toBe(0.5);
+  });
+
   it('caps each task at its plan so one task cannot cover another', () => {
     const r = score({
       tasks: [...tasks, { id: 'work', name: 'Work', tier: 'critical' }],

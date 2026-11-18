@@ -76,6 +76,17 @@ describe('computeBank', () => {
     expect(r.balance).toEqual({ important: 0, flexible: 0 });
   });
 
+  it('counts a Critical task marked done early as complete: nothing missed, nothing banked', () => {
+    const r = bank({
+      plans: { [MON]: { study: 180 } },
+      sessions: [session('study', MON, [9, 0], [11, 0])],
+      completions: [{ taskId: 'study', date: MON, at: at(MON, 11, 0) }],
+      now: at(TUE, 1),
+    });
+    expect(r.byDate[MON]).toEqual({ saved: 0, borrowed: 0, debt: 0, criticalMissed: 0 });
+    expect(r.balance).toEqual({ important: 0, flexible: 0 });
+  });
+
   it('does not let Important savings pay for Leisure', () => {
     const r = bank({
       plans: { [MON]: { gym: 60, tv: 30 } },

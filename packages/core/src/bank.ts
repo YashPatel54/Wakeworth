@@ -7,7 +7,8 @@ import type { Completion, DayPlan, ISODate, Session, Task, Tier } from './types.
  *
  * - Unused Important and Flexible time is banked, into a pool per tier, when the
  *   task is marked done or when its day closes.
- * - Unused Critical time is never banked; it is reported as "Critical missed".
+ * - Unused Critical time is never banked. If the day closes without the task
+ *   marked done, it is reported as "Critical missed"; marked done early, it isn't.
  * - Time spent past a task's allowance is paid from the bank: same tier first,
  *   then lower tiers. Whatever can't be paid becomes time debt.
  * - Everything is computed per week; the bank starts empty each week.
@@ -86,7 +87,7 @@ export interface DayBank {
   borrowed: number;
   /** Overrun minutes the bank couldn't pay. */
   debt: number;
-  /** Planned Critical minutes left unused. */
+  /** Planned Critical minutes left unused on tasks not marked done. */
   criticalMissed: number;
 }
 
@@ -162,7 +163,9 @@ export function computeBank(input: BankInput): BankResult {
       const unused = planned - (usedAtDone ?? used);
       if (unused <= EPSILON) continue;
       if (tier === 'critical') {
-        byDate[date]!.criticalMissed += unused;
+        // Finishing a Critical task early counts as complete: nothing is missed,
+        // but the leftover time is still never banked.
+        if (!completion) byDate[date]!.criticalMissed += unused;
       } else {
         events.push({ at: settledAt, date, taskId, tier, type: 'deposit', minutes: unused });
       }

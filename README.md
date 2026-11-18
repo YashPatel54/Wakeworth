@@ -11,7 +11,7 @@ streaks shows how the week went.
 
 | Part | State |
 | --- | --- |
-| `packages/core` — rules engine | Done: plan, time bank, borrowing, time debt, Focus Score, sleep, streaks, reminders (33 tests) |
+| `packages/core` — rules engine | Done: plan, time bank, borrowing, time debt, Focus Score, sleep, streaks, reminders (36 tests) |
 | `apps/web` — React PWA | Next |
 | `supabase/` — auth, database, sync, notifications | Next |
 | `apps/mobile` — Expo app | Later |
@@ -44,7 +44,8 @@ See [docs/SPEC.md](docs/SPEC.md) for the full summary. In short:
 - **Tiers:** Critical, Important, Flexible. Leisure follows Flexible rules.
 - **Time bank:** unused Important and Flexible time is banked when a task is
   marked done or the day closes. Unused Critical time is never banked; it counts
-  as "Critical missed".
+  as "Critical missed" unless the task was marked done early, which counts as
+  complete.
 - **Borrowing:** an overrun is paid from the bank, same tier first, then lower
   tiers. Important savings can't pay for Flexible tasks. What can't be paid
   becomes time debt. The bank and debt reset each week.
@@ -62,6 +63,7 @@ const bank = computeBank({ tasks, dates, plans, sessions, completions, dayEnds, 
 const score = dailyScore({
   tasks, plan,
   usage: dayUsage(sessions, '2026-11-16'),
+  completedTaskIds: ['study'],
   debtMinutes: bank.byDate['2026-11-16'].debt,
   sleep, sleepTargetMinutes: 480, usualBedtime,
   switches: countSwitches(daySessions, completions),
