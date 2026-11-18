@@ -1,0 +1,16 @@
+{
+  "name": "wakeworth",
+  "private": true,
+  "description": "Make every waking hour count: a weekly time budget with one timer at a time, a time bank and a daily Focus Score.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
